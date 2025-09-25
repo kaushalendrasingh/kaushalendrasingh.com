@@ -72,19 +72,22 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
         </div>
       )}
       {links.length > 0 && (
-        <div className="mt-6 flex flex-wrap justify-center gap-2 sm:justify-start">
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-500 hover:text-white"
-            >
-              {link.icon}
-              {link.label}
-            </a>
-          ))}
+        <div className="mt-6 rounded-2xl border border-zinc-800/70 bg-zinc-900/40 p-4">
+          <p className="text-center text-xs uppercase tracking-wide text-zinc-500 sm:text-left">Connect</p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+            {links.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-500 hover:text-white"
+              >
+                {link.icon}
+                {link.label}
+              </a>
+            ))}
+          </div>
         </div>
       )}
     </aside>
