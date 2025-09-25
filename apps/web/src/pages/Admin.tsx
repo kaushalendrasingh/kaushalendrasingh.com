@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import Navbar from '../components/Navbar'
 import { ExternalLinkIcon, GitHubIcon } from '../components/icons'
 import { api } from '../lib/api'
 import type { Profile, Project } from '../types'
 
 const STORAGE_KEY = 'portfolio.admin.apiKey'
+const AUTH_KEY = 'portfolio.admin.authenticated'
+const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL as string | undefined) ?? 'admin@kaushcodes.com'
+const ADMIN_PASSWORD = (import.meta.env.VITE_ADMIN_PASSWORD as string | undefined) ?? 'shipfast'
 
 const blankProjectForm = {
   id: undefined as number | undefined,
@@ -73,6 +76,12 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState<'projects' | 'profile'>('projects')
   const [projectForm, setProjectForm] = useState<ProjectFormState>({ ...blankProjectForm })
   const [profileForm, setProfileForm] = useState<ProfileFormState>({ ...blankProfileForm })
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
+  const [loginError, setLoginError] = useState<string | null>(null)
+  const [isAuthed, setIsAuthed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem(AUTH_KEY) === 'true'
+  })
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -92,11 +101,13 @@ export default function Admin() {
   const { data: profile } = useQuery<Profile>({
     queryKey: ['profile'],
     queryFn: async () => (await api.get('/profile')).data,
+    enabled: isAuthed,
   })
 
   const { data: projects } = useQuery<Project[]>({
     queryKey: ['projects', 'admin'],
     queryFn: async () => (await api.get('/projects')).data,
+    enabled: isAuthed,
   })
 
   useEffect(() => {
@@ -223,6 +234,94 @@ export default function Admin() {
     profileMutation.mutate(payload)
   }
 
+  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const normalizedEmail = loginForm.email.trim().toLowerCase()
+    const expectedEmail = ADMIN_EMAIL.trim().toLowerCase()
+
+    if (normalizedEmail === expectedEmail && loginForm.password === ADMIN_PASSWORD) {
+      setIsAuthed(true)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(AUTH_KEY, 'true')
+      }
+      setLoginError(null)
+      setLoginForm({ email: '', password: '' })
+      return
+    }
+
+    setLoginError('That combo unlocks nothing. Try again, code ranger.')
+  }
+
+  const handleLogout = () => {
+    setIsAuthed(false)
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(AUTH_KEY)
+    }
+    setProjectForm({ ...blankProjectForm })
+    setProfileForm({ ...blankProfileForm })
+    setActiveTab('projects')
+  }
+
+  if (!isAuthed) {
+    return (
+      <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
+        <Navbar profile={profile} />
+        <main className="mx-auto flex min-h-screen items-center justify-center px-4 pb-16 pt-28">
+          <div className="max-w-md w-full rounded-3xl border border-zinc-800/70 bg-zinc-900/60 p-8 shadow-[0_40px_80px_rgba(0,0,0,0.45)]">
+            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Admin Access</p>
+            <h1 className="mt-4 text-3xl font-semibold text-white">Enter the command deck</h1>
+            <p className="mt-2 text-sm text-zinc-400">
+              Only trusted operators may deploy updates. Authenticate with your crew credentials.
+            </p>
+            <form className="mt-6 space-y-4" onSubmit={handleLogin}>
+              <div>
+                <label className="text-xs uppercase tracking-wide text-zinc-500" htmlFor="admin-email">
+                  Email
+                </label>
+                <input
+                  id="admin-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  className="mt-1 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-brand/60 focus:outline-none"
+                  placeholder="you@shipfast.dev"
+                  value={loginForm.email}
+                  onChange={(event) => setLoginForm({ ...loginForm, email: event.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wide text-zinc-500" htmlFor="admin-password">
+                  Password
+                </label>
+                <input
+                  id="admin-password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  className="mt-1 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-brand/60 focus:outline-none"
+                  placeholder="••••••••"
+                  value={loginForm.password}
+                  onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })}
+                />
+              </div>
+              {loginError && <p className="text-sm text-red-400">{loginError}</p>}
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-zinc-950 shadow-glow transition hover:shadow-glow"
+              >
+                Enter Control Room
+              </button>
+            </form>
+            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-[11px] text-zinc-500">
+              <p className="font-medium text-zinc-300">Heads-up</p>
+              <p className="mt-1">Configure `VITE_ADMIN_EMAIL` & `VITE_ADMIN_PASSWORD` in your web env to customise these credentials.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
       <Navbar profile={profile} />
@@ -244,6 +343,13 @@ export default function Admin() {
                 onChange={(event) => setApiKey(event.target.value)}
               />
               <p className="mt-2 text-[11px] text-zinc-500">Stored locally in your browser for convenience.</p>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="mt-3 inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-1.5 text-[11px] font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-white"
+              >
+                Log out
+              </button>
             </div>
           </div>
           <div className="inline-flex rounded-full border border-zinc-800 bg-zinc-900/60 p-1 text-sm">

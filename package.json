@@ -1,0 +1,7 @@
+{
+  "name": "kaushalendrasingh-portfolio",
+  "private": true,
+  "scripts": {
+    "dev": "bash -lc 'trap \"kill 0\" EXIT; cd apps/api && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --reload-dir app --env-file .env & cd ../web && yarn dev'"
+  }
+}
