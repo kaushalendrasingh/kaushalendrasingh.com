@@ -5,11 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './pages/Home'
 import Admin from './pages/Admin'
+import Contact from './pages/Contact'
 
 const queryClient = new QueryClient()
 
 const router = createBrowserRouter([
   { path: '/', element: <App /> },
+  { path: '/contact', element: <Contact /> },
   { path: '/admin', element: <Admin /> },
 ])
 

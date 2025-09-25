@@ -71,3 +71,17 @@ def list_tags(db: Session):
             for t in arr:
                 tags.add(t)
     return sorted(tags)
+
+
+# -------- Inquiries --------
+def create_inquiry(db: Session, data: schemas.InquiryCreate):
+    inquiry = models.Inquiry(**data.model_dump())
+    db.add(inquiry)
+    db.commit()
+    db.refresh(inquiry)
+    return inquiry
+
+
+def list_inquiries(db: Session):
+    stmt = select(models.Inquiry).order_by(models.Inquiry.created_at.desc())
+    return db.execute(stmt).scalars().all()

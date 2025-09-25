@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, HttpUrl, Field, EmailStr
 from typing import Optional, List
 from datetime import date, datetime
 
@@ -60,6 +60,27 @@ class ProfileUpdate(ProfileBase):
 
 class ProfileOut(ProfileBase):
     id: int
+
+    class Config:
+        from_attributes = True
+
+
+# -------- Inquiry --------
+class InquiryBase(BaseModel):
+    name: str
+    email: EmailStr
+    company: Optional[str] = None
+    message: str
+    attachment_path: Optional[str] = None
+
+
+class InquiryCreate(InquiryBase):
+    pass
+
+
+class InquiryOut(InquiryBase):
+    id: int
+    created_at: datetime
 
     class Config:
         from_attributes = True

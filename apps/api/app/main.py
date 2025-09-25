@@ -1,7 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from pydantic import EmailStr
+from pathlib import Path
+from uuid import uuid4
 
 from app.config import settings
 from app.database import Base, engine, get_db
@@ -11,6 +14,9 @@ from app import schemas, models, crud, deps
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="kaushalendrasingh API", version="1.0.0")
+
+UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -72,3 +78,39 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
 @app.get("/tags", response_model=List[str])
 def list_tags(db: Session = Depends(get_db)):
     return crud.list_tags(db)
+
+
+# -------- Inquiries --------
+@app.post("/inquiries", response_model=schemas.InquiryOut)
+async def create_inquiry(
+    name: str = Form(...),
+    email: EmailStr = Form(...),
+    company: Optional[str] = Form(default=None),
+    message: str = Form(...),
+    attachment: UploadFile | None = File(default=None),
+    db: Session = Depends(get_db),
+):
+    attachment_path: Optional[str] = None
+    if attachment and attachment.filename:
+        safe_suffix = Path(attachment.filename).suffix[:10]
+        filename = f"{uuid4().hex}{safe_suffix}"
+        file_path = UPLOAD_DIR / filename
+        contents = await attachment.read()
+        if len(contents) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Attachment too large (max 5MB)")
+        file_path.write_bytes(contents)
+        attachment_path = str(Path("uploads") / filename)
+
+    payload = schemas.InquiryCreate(
+        name=name,
+        email=email,
+        company=company or None,
+        message=message,
+        attachment_path=attachment_path,
+    )
+    return crud.create_inquiry(db, payload)
+
+
+@app.get("/inquiries", response_model=List[schemas.InquiryOut], dependencies=[Depends(deps.require_api_key)])
+def list_inquiries(db: Session = Depends(get_db)):
+    return crud.list_inquiries(db)
