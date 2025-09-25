@@ -84,3 +84,11 @@ class InquiryOut(InquiryBase):
 
     class Config:
         from_attributes = True
+
+
+class InquiryListOut(BaseModel):
+    items: List[InquiryOut]
+    page: int
+    page_size: int
+    total: int
+    total_pages: int

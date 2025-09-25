@@ -1,3 +1,4 @@
+import math
 from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -5,6 +6,7 @@ from typing import List, Optional
 from pydantic import EmailStr
 from pathlib import Path
 from uuid import uuid4
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import Base, engine, get_db
@@ -17,6 +19,7 @@ app = FastAPI(title="kaushalendrasingh API", version="1.0.0")
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
@@ -111,6 +114,20 @@ async def create_inquiry(
     return crud.create_inquiry(db, payload)
 
 
-@app.get("/inquiries", response_model=List[schemas.InquiryOut], dependencies=[Depends(deps.require_api_key)])
-def list_inquiries(db: Session = Depends(get_db)):
-    return crud.list_inquiries(db)
+@app.get("/inquiries", response_model=schemas.InquiryListOut, dependencies=[Depends(deps.require_api_key)])
+def list_inquiries(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    search: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    offset = (page - 1) * page_size
+    items, total = crud.list_inquiries(db, search=search.strip() if search else None, offset=offset, limit=page_size)
+    total_pages = math.ceil(total / page_size) if total else 0
+    return schemas.InquiryListOut(
+        items=items,
+        page=page,
+        page_size=page_size,
+        total=total,
+        total_pages=total_pages,
+    )

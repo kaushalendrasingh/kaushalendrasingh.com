@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func, or_
 from app import models, schemas
 
 # -------- Projects --------
@@ -42,7 +42,7 @@ def get_profile(db: Session):
         p = models.Profile(
             id=1,
             name="Kaushalendra Singh",
-            headline="Full‑Stack Developer · React + FastAPI",
+            headline="Full‑Stack Developer · React + Node + FastAPI",
             bio="I build clean, fast, and scalable products. This portfolio is powered by FastAPI + Postgres + React.",
             skills=["React", "TypeScript", "Tailwind", "FastAPI", "PostgreSQL"],
             github="https://github.com/kaushalendrasingh",
@@ -82,6 +82,23 @@ def create_inquiry(db: Session, data: schemas.InquiryCreate):
     return inquiry
 
 
-def list_inquiries(db: Session):
-    stmt = select(models.Inquiry).order_by(models.Inquiry.created_at.desc())
-    return db.execute(stmt).scalars().all()
+def list_inquiries(db: Session, search: str | None, offset: int, limit: int):
+    stmt = select(models.Inquiry)
+    count_stmt = select(func.count(models.Inquiry.id))
+
+    if search:
+        pattern = f"%{search}%"
+        condition = or_(
+            models.Inquiry.name.ilike(pattern),
+            models.Inquiry.email.ilike(pattern),
+            models.Inquiry.company.ilike(pattern),
+            models.Inquiry.message.ilike(pattern),
+        )
+        stmt = stmt.where(condition)
+        count_stmt = count_stmt.where(condition)
+
+    total = db.execute(count_stmt).scalar_one()
+
+    stmt = stmt.order_by(models.Inquiry.created_at.desc()).offset(offset).limit(limit)
+    items = db.execute(stmt).scalars().all()
+    return items, total

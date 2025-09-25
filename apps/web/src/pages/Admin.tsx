@@ -1,9 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import Navbar from '../components/Navbar'
 import { ExternalLinkIcon, GitHubIcon } from '../components/icons'
 import { api } from '../lib/api'
-import type { Profile, Project } from '../types'
+import type { Profile, Project, PaginatedInquiries, Inquiry } from '../types'
 
 const STORAGE_KEY = 'portfolio.admin.apiKey'
 const AUTH_KEY = 'portfolio.admin.authenticated'
@@ -54,6 +54,8 @@ const blankProfileForm: ProfileFormState = {
   website: '',
 }
 
+const CONTACTS_PAGE_SIZE = 10
+
 const splitComma = (value: string) =>
   value
     .split(',')
@@ -73,7 +75,7 @@ const requireKey = (apiKey: string) => {
 export default function Admin() {
   const qc = useQueryClient()
   const [apiKey, setApiKey] = useState('')
-  const [activeTab, setActiveTab] = useState<'projects' | 'profile'>('projects')
+  const [activeTab, setActiveTab] = useState<'projects' | 'profile' | 'contacts'>('projects')
   const [projectForm, setProjectForm] = useState<ProjectFormState>({ ...blankProjectForm })
   const [profileForm, setProfileForm] = useState<ProfileFormState>({ ...blankProfileForm })
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
@@ -82,6 +84,9 @@ export default function Admin() {
     if (typeof window === 'undefined') return false
     return window.localStorage.getItem(AUTH_KEY) === 'true'
   })
+  const [contactsPage, setContactsPage] = useState(1)
+  const [contactsSearchInput, setContactsSearchInput] = useState('')
+  const [contactsSearch, setContactsSearch] = useState('')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -109,6 +114,33 @@ export default function Admin() {
     queryFn: async () => (await api.get('/projects')).data,
     enabled: isAuthed,
   })
+
+  const contactsQuery = useQuery<PaginatedInquiries>({
+    queryKey: ['inquiries', contactsPage, contactsSearch, apiKey],
+    queryFn: async () => {
+      const headers = { 'X-API-Key': apiKey }
+      const params = {
+        page: contactsPage,
+        page_size: CONTACTS_PAGE_SIZE,
+        search: contactsSearch || undefined,
+      }
+      const { data } = await api.get('/inquiries', { params, headers })
+      return data as PaginatedInquiries
+    },
+    enabled: isAuthed && Boolean(apiKey),
+    placeholderData: keepPreviousData,
+  })
+
+  const contactsError = contactsQuery.error as any
+  const contactsErrorMessage = contactsError?.response?.data?.detail ?? contactsError?.message ?? 'Failed to load inquiries.'
+  const baseUploadsUrl = api.defaults.baseURL?.replace(/\/$/, '') ?? ''
+  const contactsData = contactsQuery.data
+  const contactsRangeStart = contactsData && contactsData.items.length > 0
+    ? (contactsData.page - 1) * contactsData.page_size + 1
+    : 0
+  const contactsRangeEnd = contactsData && contactsData.items.length > 0
+    ? contactsRangeStart + contactsData.items.length - 1
+    : 0
 
   useEffect(() => {
     if (!profile) return
@@ -234,6 +266,18 @@ export default function Admin() {
     profileMutation.mutate(payload)
   }
 
+  const handleContactsSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setContactsPage(1)
+    setContactsSearch(contactsSearchInput.trim())
+  }
+
+  const handleContactsReset = () => {
+    setContactsPage(1)
+    setContactsSearch('')
+    setContactsSearchInput('')
+  }
+
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const normalizedEmail = loginForm.email.trim().toLowerCase()
@@ -260,6 +304,9 @@ export default function Admin() {
     setProjectForm({ ...blankProjectForm })
     setProfileForm({ ...blankProfileForm })
     setActiveTab('projects')
+    setContactsPage(1)
+    setContactsSearch('')
+    setContactsSearchInput('')
   }
 
   if (!isAuthed) {
@@ -370,6 +417,15 @@ export default function Admin() {
               }`}
             >
               Profile
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('contacts')}
+              className={`rounded-full px-4 py-2 transition ${
+                activeTab === 'contacts' ? 'bg-brand text-zinc-950' : 'text-zinc-300 hover:text-white'
+              }`}
+            >
+              Contacts
             </button>
           </div>
         </header>
@@ -665,6 +721,148 @@ export default function Admin() {
                 Reset
               </button>
             </div>
+          </section>
+        )}
+
+        {activeTab === 'contacts' && (
+          <section className="rounded-3xl border border-zinc-800/70 bg-zinc-900/50 p-8 shadow-lg shadow-black/20">
+            <header className="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-white">Contact inquiries</h2>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Review messages from leads, collaborators, and clients. Filter by keyword or step through pages.
+                </p>
+              </div>
+              <form className="flex flex-wrap items-center gap-2" onSubmit={handleContactsSearchSubmit}>
+                <input
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-brand/60 focus:outline-none md:w-64"
+                  placeholder="Filter by name, email, company, message"
+                  value={contactsSearchInput}
+                  onChange={(event) => setContactsSearchInput(event.target.value)}
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:border-zinc-500 hover:text-white"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleContactsReset}
+                    className="rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:border-zinc-500 hover:text-white"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </form>
+            </header>
+
+            {!apiKey && (
+              <div className="rounded-2xl border border-zinc-800/70 bg-zinc-900/40 p-6 text-sm text-zinc-400">
+                Add your API key above to load inquiries.
+              </div>
+            )}
+
+            {apiKey && (
+              <div className="space-y-6">
+                {contactsQuery.isLoading && (
+                  <div className="rounded-2xl border border-zinc-800/70 bg-zinc-900/40 p-6 text-sm text-zinc-400">
+                    Loading inquiries…
+                  </div>
+                )}
+
+                {contactsQuery.isError && !contactsQuery.isLoading && (
+                  <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-200">
+                    {contactsErrorMessage}
+                  </div>
+                )}
+
+                {!contactsQuery.isLoading && !contactsQuery.isError && contactsData && contactsData.items.length === 0 && (
+                  <div className="rounded-2xl border border-zinc-800/70 bg-zinc-900/40 p-6 text-sm text-zinc-400">
+                    No inquiries yet. Once someone reaches out via the contact form, their details will appear here.
+                  </div>
+                )}
+
+                {contactsData && contactsData.items.length > 0 && (
+                  <div className="space-y-4">
+                    {contactsData.items.map((item) => {
+                      const attachmentUrl = item.attachment_path
+                        ? `${baseUploadsUrl}/${item.attachment_path.replace(/^\//, '')}`
+                        : null
+                      const createdAt = new Date(item.created_at).toLocaleString(undefined, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })
+
+                      return (
+                        <article
+                          key={item.id}
+                          className="rounded-2xl border border-zinc-800/70 bg-zinc-900/40 p-5 shadow shadow-black/20"
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+                              <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-zinc-400">
+                                <a href={`mailto:${item.email}`} className="underline decoration-dotted decoration-zinc-500">
+                                  {item.email}
+                                </a>
+                                {item.company && <span className="text-xs uppercase tracking-wide text-zinc-500">{item.company}</span>}
+                              </div>
+                            </div>
+                            <p className="text-xs text-zinc-500">{createdAt}</p>
+                          </div>
+                          <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">
+                            {item.message}
+                          </p>
+                          {attachmentUrl && (
+                            <div className="mt-4">
+                              <a
+                                href={attachmentUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-500 hover:text-white"
+                              >
+                                View attachment
+                              </a>
+                            </div>
+                          )}
+                        </article>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {contactsData && contactsData.total_pages > 1 && (
+                  <div className="flex flex-col gap-3 border-t border-zinc-800/60 pt-4 text-sm text-zinc-400 md:flex-row md:items-center md:justify-between">
+                    <span>
+                      Showing {contactsRangeStart} – {contactsRangeEnd} of {contactsData.total}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setContactsPage((prev) => Math.max(1, prev - 1))}
+                        disabled={contactsPage === 1 || contactsQuery.isFetching}
+                        className="rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:border-zinc-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs uppercase tracking-wide text-zinc-500">
+                        Page {contactsPage} / {contactsData.total_pages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setContactsPage((prev) => Math.min(contactsData.total_pages, prev + 1))}
+                        disabled={contactsPage >= contactsData.total_pages || contactsQuery.isFetching}
+                        className="rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:border-zinc-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         )}
       </main>

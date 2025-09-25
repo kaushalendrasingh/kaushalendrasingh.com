@@ -30,3 +30,21 @@ export type Project = {
   created_at: string
   updated_at: string
 }
+
+export type Inquiry = {
+  id: number
+  name: string
+  email: string
+  company?: string | null
+  message: string
+  attachment_path?: string | null
+  created_at: string
+}
+
+export type PaginatedInquiries = {
+  items: Inquiry[]
+  page: number
+  page_size: number
+  total: number
+  total_pages: number
+}
