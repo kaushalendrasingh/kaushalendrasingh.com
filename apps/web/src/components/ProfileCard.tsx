@@ -1,36 +1,92 @@
-import { useQuery } from '@tanstack/react-query'
-import { api } from '../lib/api'
+import type { JSX } from 'react'
+import type { Profile } from '../types'
+import { ExternalLinkIcon, GitHubIcon, LinkedInIcon, LocationIcon, WorkIcon } from './icons'
 
-export default function ProfileCard() {
-  const { data } = useQuery({
-    queryKey: ['profile'],
-    queryFn: async () => (await api.get('/profile')).data
-  })
+type ProfileCardProps = {
+  profile?: Profile
+}
 
-  if (!data) return null
+export default function ProfileCard({ profile }: ProfileCardProps) {
+  if (!profile) return null
+
+  const links = [
+    profile.github && { href: profile.github, label: 'GitHub', icon: <GitHubIcon className="h-4 w-4" /> },
+    profile.linkedin && { href: profile.linkedin, label: 'LinkedIn', icon: <LinkedInIcon className="h-4 w-4" /> },
+    profile.website && { href: profile.website, label: 'Website', icon: <ExternalLinkIcon className="h-4 w-4" /> },
+    profile.twitter && { href: profile.twitter, label: 'Twitter', icon: <ExternalLinkIcon className="h-4 w-4" /> },
+  ].filter(Boolean) as { href: string; label: string; icon: JSX.Element }[]
 
   return (
-    <div className="rounded-2xl border border-zinc-800 p-6 bg-zinc-900/40">
+    <aside className="rounded-3xl border border-zinc-800/70 bg-zinc-900/50 p-6 shadow-lg shadow-black/20">
       <div className="flex items-start gap-4">
-        {data.avatar_url && <img src={data.avatar_url} alt="avatar" className="w-16 h-16 rounded-full object-cover" />}
+        {profile.avatar_url ? (
+          <img
+            src={profile.avatar_url}
+            alt={`${profile.name} avatar`}
+            className="h-16 w-16 rounded-2xl object-cover ring-2 ring-brand/30"
+          />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/20 text-lg font-semibold text-brand">
+            {profile.name.slice(0, 2).toUpperCase()}
+          </div>
+        )}
         <div className="flex-1">
-          <h3 className="text-xl font-semibold">{data.name}</h3>
-          <p className="text-zinc-400">{data.headline}</p>
-          <p className="mt-3 text-zinc-300">{data.bio}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {data.skills?.map((s: string) => (
-              <span key={s} className="text-xs px-2 py-1 rounded-full bg-zinc-800 border border-zinc-700">{s}</span>
-            ))}
-          </div>
-          <div className="mt-4 flex gap-3">
-            {data.resume_url && <a id="resume" href={data.resume_url} target="_blank" className="text-brand underline">Resume</a>}
-            {data.github && <a href={data.github} target="_blank" className="hover:underline">GitHub</a>}
-            {data.linkedin && <a href={data.linkedin} target="_blank" className="hover:underline">LinkedIn</a>}
-            {data.twitter && <a href={data.twitter} target="_blank" className="hover:underline">Twitter</a>}
-            {data.website && <a href={data.website} target="_blank" className="hover:underline">Website</a>}
-          </div>
+          <h3 className="text-xl font-semibold tracking-tight text-white">{profile.name}</h3>
+          <p className="mt-1 text-sm text-zinc-400">{profile.headline}</p>
         </div>
       </div>
-    </div>
+      <p className="mt-5 text-sm leading-relaxed text-zinc-300">{profile.bio}</p>
+      <dl className="mt-5 grid grid-cols-1 gap-3 text-sm text-zinc-300">
+        {profile.location && (
+          <div className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/40 px-3 py-2">
+            <LocationIcon className="h-4 w-4" />
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">Based in</dt>
+              <dd className="font-medium text-zinc-200">{profile.location}</dd>
+            </div>
+          </div>
+        )}
+        {profile.years_experience != null && (
+          <div className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/40 px-3 py-2">
+            <WorkIcon className="h-4 w-4" />
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">Experience</dt>
+              <dd className="font-medium text-zinc-200">{profile.years_experience}+ years shipping</dd>
+            </div>
+          </div>
+        )}
+      </dl>
+      {profile.skills?.length > 0 && (
+        <div className="mt-5">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">Core Stack</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {profile.skills.map((skill) => (
+              <span
+                key={skill}
+                className="rounded-full border border-zinc-700/80 bg-zinc-900/60 px-3 py-1 text-xs font-medium text-zinc-200"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {links.length > 0 && (
+        <div className="mt-6 flex flex-wrap gap-2">
+          {links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-500 hover:text-white"
+            >
+              {link.icon}
+              {link.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </aside>
   )
 }

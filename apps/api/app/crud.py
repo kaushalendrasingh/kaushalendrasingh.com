@@ -46,6 +46,7 @@ def get_profile(db: Session):
             bio="I build clean, fast, and scalable products. This portfolio is powered by FastAPI + Postgres + React.",
             skills=["React", "TypeScript", "Tailwind", "FastAPI", "PostgreSQL"],
             github="https://github.com/kaushalendrasingh",
+            linkedin="https://www.linkedin.com/in/kaushalendra-singh/",
             website="https://kaushcodes.com"
         )
         db.add(p)
