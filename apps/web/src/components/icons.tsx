@@ -40,3 +40,38 @@ export const WorkIcon = ({ className = '', ...props }: SVGProps<SVGSVGElement>) 
     <path d="M8 11h8" />
   </svg>
 )
+
+export const MoonIcon = ({ className = '', ...props }: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={buildClassName(className)} aria-hidden {...props}>
+    <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z" />
+  </svg>
+)
+
+export const SunIcon = ({ className = '', ...props }: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={buildClassName(className)} aria-hidden {...props}>
+    <circle cx="12" cy="12" r="5" />
+    <path d="M12 1v2" />
+    <path d="M12 21v2" />
+    <path d="m4.22 4.22 1.42 1.42" />
+    <path d="m18.36 18.36 1.42 1.42" />
+    <path d="M1 12h2" />
+    <path d="M21 12h2" />
+    <path d="m4.22 19.78 1.42-1.42" />
+    <path d="m18.36 5.64 1.42-1.42" />
+  </svg>
+)
+
+export const MenuIcon = ({ className = '', ...props }: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={buildClassName(className)} aria-hidden {...props}>
+    <path d="M3 6h18" />
+    <path d="M3 12h18" />
+    <path d="M3 18h18" />
+  </svg>
+)
+
+export const CloseIcon = ({ className = '', ...props }: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={buildClassName(className)} aria-hidden {...props}>
+    <path d="m4 4 16 16" />
+    <path d="M20 4 4 20" />
+  </svg>
+)

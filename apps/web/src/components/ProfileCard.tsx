@@ -18,24 +18,24 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
 
   return (
     <aside className="rounded-3xl border border-zinc-800/70 bg-zinc-900/50 p-6 shadow-lg shadow-black/20">
-      <div className="flex items-start gap-4">
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
         {profile.avatar_url ? (
           <img
             src={profile.avatar_url}
             alt={`${profile.name} avatar`}
-            className="h-16 w-16 rounded-2xl object-cover ring-2 ring-brand/30"
+            className="h-20 w-20 rounded-2xl object-cover ring-2 ring-brand/30"
           />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/20 text-lg font-semibold text-brand">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand/20 text-xl font-semibold text-brand">
             {profile.name.slice(0, 2).toUpperCase()}
           </div>
         )}
-        <div className="flex-1">
+        <div className="flex-1 text-center sm:text-left">
           <h3 className="text-xl font-semibold tracking-tight text-white">{profile.name}</h3>
           <p className="mt-1 text-sm text-zinc-400">{profile.headline}</p>
         </div>
       </div>
-      <p className="mt-5 text-sm leading-relaxed text-zinc-300">{profile.bio}</p>
+      <p className="mt-5 text-sm leading-relaxed text-zinc-300 text-center sm:text-left">{profile.bio}</p>
       <dl className="mt-5 grid grid-cols-1 gap-3 text-sm text-zinc-300">
         {profile.location && (
           <div className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/40 px-3 py-2">
@@ -58,8 +58,8 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
       </dl>
       {profile.skills?.length > 0 && (
         <div className="mt-5">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">Core Stack</p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <p className="text-center text-xs uppercase tracking-wide text-zinc-500 sm:text-left">Core Stack</p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
             {profile.skills.map((skill) => (
               <span
                 key={skill}
@@ -72,7 +72,7 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
         </div>
       )}
       {links.length > 0 && (
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 flex flex-wrap justify-center gap-2 sm:justify-start">
           {links.map((link) => (
             <a
               key={link.href}

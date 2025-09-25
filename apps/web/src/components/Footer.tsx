@@ -14,11 +14,11 @@ export default function Footer({ profile }: FooterProps) {
 
   return (
     <footer id="contact" className="py-16">
-      <div className="rounded-3xl border border-zinc-800/70 bg-zinc-900/50 p-8 text-center shadow-inner shadow-black/40">
+      <div className="rounded-3xl border border-zinc-800/70 bg-zinc-900/50 px-6 py-10 text-center shadow-inner shadow-black/40 sm:px-10">
         <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Let’s build together</p>
         <h3 className="mt-4 text-2xl font-semibold text-white">Open to product engineering, consulting, and collaborations.</h3>
         {socials.length > 0 && (
-          <div className="mt-6 flex justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             {socials.map((item) => (
               <a
                 key={item.href}
