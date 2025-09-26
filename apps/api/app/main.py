@@ -17,9 +17,9 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="kaushalendrasingh API", version="1.0.0")
 
-UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+ASSET_DIR = Path(__file__).resolve().parent / "assets"
+ASSET_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/assets", StaticFiles(directory=ASSET_DIR), name="assets")
 
 app.add_middleware(
     CORSMiddleware,
@@ -97,12 +97,12 @@ async def create_inquiry(
     if attachment and attachment.filename:
         safe_suffix = Path(attachment.filename).suffix[:10]
         filename = f"{uuid4().hex}{safe_suffix}"
-        file_path = UPLOAD_DIR / filename
+        file_path = ASSET_DIR / filename
         contents = await attachment.read()
         if len(contents) > 5 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Attachment too large (max 5MB)")
         file_path.write_bytes(contents)
-        attachment_path = str(Path("uploads") / filename)
+        attachment_path = str(Path("assets") / filename)
 
     payload = schemas.InquiryCreate(
         name=name,

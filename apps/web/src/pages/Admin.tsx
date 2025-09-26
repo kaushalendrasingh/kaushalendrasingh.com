@@ -133,7 +133,7 @@ export default function Admin() {
 
   const contactsError = contactsQuery.error as any
   const contactsErrorMessage = contactsError?.response?.data?.detail ?? contactsError?.message ?? 'Failed to load inquiries.'
-  const baseUploadsUrl = api.defaults.baseURL?.replace(/\/$/, '') ?? ''
+  const baseAssetsUrl = api.defaults.baseURL?.replace(/\/$/, '') ?? ''
   const contactsData = contactsQuery.data
   const contactsRangeStart = contactsData && contactsData.items.length > 0
     ? (contactsData.page - 1) * contactsData.page_size + 1
@@ -788,7 +788,7 @@ export default function Admin() {
                   <div className="space-y-4">
                     {contactsData.items.map((item) => {
                       const attachmentUrl = item.attachment_path
-                        ? `${baseUploadsUrl}/${item.attachment_path.replace(/^\//, '')}`
+                        ? `${baseAssetsUrl}/${item.attachment_path.replace(/^\//, '')}`
                         : null
                       const createdAt = new Date(item.created_at).toLocaleString(undefined, {
                         dateStyle: 'medium',
