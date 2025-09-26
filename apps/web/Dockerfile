@@ -9,7 +9,7 @@ RUN yarn install --frozen-lockfile
 COPY . .
 
 ENV NODE_ENV=development \
-    VITE_API_URL=http://localhost:8000
+    VITE_API_URL=http://13.232.176.236:8000
 
 EXPOSE 5173
 
