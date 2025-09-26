@@ -12,6 +12,7 @@ apps/web/node_modules/
 .env.production.local
 */.env
 **/.env
+kaushal_key.pem
 
 # Python
 __pycache__/
@@ -25,7 +26,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -35,6 +35,10 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# Python-specific lib directories (not frontend lib directories)
+**/python*/lib/
+**/site-packages/
 
 # Virtual environments
 venv/
@@ -85,6 +89,7 @@ apps/web/dist/
 
 # Docker
 .dockerignore
+!apps/web/.dockerignore
 
 # Database
 *.db
