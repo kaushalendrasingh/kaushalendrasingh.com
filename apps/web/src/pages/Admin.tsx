@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import Navbar from '../components/Navbar'
 import { ExternalLinkIcon, GitHubIcon } from '../components/icons'
+import { resolveAssetUrl, isVideoAsset } from '../lib/media'
 import { api } from '../lib/api'
 import type { Profile, Project, PaginatedInquiries, Inquiry } from '../types'
 
@@ -20,6 +21,7 @@ const blankProjectForm = {
   live_url: '',
   cover_image_url: '',
   featured: false,
+  pendingAssets: [] as File[],
 }
 
 type ProjectFormState = typeof blankProjectForm
@@ -133,7 +135,6 @@ export default function Admin() {
 
   const contactsError = contactsQuery.error as any
   const contactsErrorMessage = contactsError?.response?.data?.detail ?? contactsError?.message ?? 'Failed to load inquiries.'
-  const baseAssetsUrl = api.defaults.baseURL?.replace(/\/$/, '') ?? ''
   const contactsData = contactsQuery.data
   const contactsRangeStart = contactsData && contactsData.items.length > 0
     ? (contactsData.page - 1) * contactsData.page_size + 1
@@ -171,10 +172,24 @@ export default function Admin() {
   }, [projects])
 
   const projectMutation = useMutation({
-    mutationFn: async ({ mode, payload, id }: { mode: 'create' | 'update'; payload: any; id?: number }) => {
+    mutationFn: async ({ mode, payload, id, files }: { mode: 'create' | 'update'; payload: any; id?: number; files?: File[] }) => {
       const headers = { 'X-API-Key': apiKey }
       if (mode === 'create') {
         const { data } = await api.post('/projects', payload, { headers })
+        if (files && files.length > 0) {
+          const formData = new FormData()
+          files.forEach((file) => formData.append('files', file))
+          try {
+            await api.post(`/projects/${data.id}/assets`, formData, {
+              headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+            })
+            const refreshed = await api.get(`/projects/${data.id}`)
+            return refreshed.data as Project
+          } catch (error) {
+            console.error(error)
+            alert('Project saved, but asset upload failed. You can retry from the project list below.')
+          }
+        }
         return data as Project
       }
       if (!id) throw new Error('Missing project id for update')
@@ -223,6 +238,38 @@ export default function Admin() {
     },
   })
 
+  const projectAssetUploadMutation = useMutation({
+    mutationFn: async ({ projectId, files }: { projectId: number; files: File[] }) => {
+      const headers = { 'X-API-Key': apiKey, 'Content-Type': 'multipart/form-data' }
+      const formData = new FormData()
+      files.forEach((file) => formData.append('files', file))
+      const { data } = await api.post(`/projects/${projectId}/assets`, formData, { headers })
+      return data as Project
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projects'] })
+      qc.invalidateQueries({ queryKey: ['projects', 'admin'] })
+    },
+    onError: (error: any) => {
+      alert(error?.response?.data?.detail ?? error.message ?? 'Failed to upload assets')
+    },
+  })
+
+  const projectAssetDeleteMutation = useMutation({
+    mutationFn: async ({ projectId, assetPath }: { projectId: number; assetPath: string }) => {
+      const headers = { 'X-API-Key': apiKey }
+      const { data } = await api.delete(`/projects/${projectId}/assets`, { params: { asset_path: assetPath }, headers })
+      return data as Project
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projects'] })
+      qc.invalidateQueries({ queryKey: ['projects', 'admin'] })
+    },
+    onError: (error: any) => {
+      alert(error?.response?.data?.detail ?? error.message ?? 'Failed to remove asset')
+    },
+  })
+
   const handleProjectSubmit = () => {
     if (!requireKey(apiKey)) return
     const payload: Record<string, unknown> = {
@@ -241,7 +288,7 @@ export default function Admin() {
     }
 
     const mode = projectForm.id ? 'update' : 'create'
-    projectMutation.mutate({ mode, payload, id: projectForm.id })
+    projectMutation.mutate({ mode, payload, id: projectForm.id, files: projectForm.pendingAssets })
   }
 
   const handleProfileSubmit = () => {
@@ -276,6 +323,19 @@ export default function Admin() {
     setContactsPage(1)
     setContactsSearch('')
     setContactsSearchInput('')
+  }
+
+  const handleProjectAssetUpload = (projectId: number, files: FileList | null) => {
+    if (!files || files.length === 0) return
+    if (!requireKey(apiKey)) return
+    const fileArray = Array.from(files)
+    projectAssetUploadMutation.mutate({ projectId, files: fileArray })
+  }
+
+  const handleProjectAssetDelete = (projectId: number, assetPath: string) => {
+    if (!requireKey(apiKey)) return
+    if (!window.confirm('Remove this asset from the project?')) return
+    projectAssetDeleteMutation.mutate({ projectId, assetPath })
   }
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
@@ -456,6 +516,26 @@ export default function Admin() {
                     setProjectForm({ ...projectForm, cover_image_url: event.target.value })
                   }
                 />
+                <div className="md:col-span-2">
+                  <label className="text-xs uppercase tracking-wide text-zinc-500">Upload assets (optional)</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={(event) =>
+                      setProjectForm({
+                        ...projectForm,
+                        pendingAssets: Array.from(event.target.files ?? []),
+                      })
+                    }
+                    className="mt-1 block w-full text-sm text-zinc-300 file:mr-4 file:rounded-xl file:border-0 file:bg-zinc-800 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700"
+                  />
+                  {projectForm.pendingAssets.length > 0 && (
+                    <p className="mt-2 text-xs text-zinc-500">
+                      {projectForm.pendingAssets.length} file(s) ready to upload on save.
+                    </p>
+                  )}
+                </div>
                 <input
                   className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-brand/60 focus:outline-none"
                   placeholder="GitHub URL"
@@ -566,6 +646,55 @@ export default function Admin() {
                       </a>
                     )}
                   </div>
+                  {project.images && project.images.length > 0 && (
+                    <div className="mt-5 space-y-2">
+                      <p className="text-xs uppercase tracking-wide text-zinc-500">Assets</p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {project.images.map((asset) => {
+                          const url = resolveAssetUrl(asset)
+                          if (!url) return null
+                          const video = isVideoAsset(asset)
+                          return (
+                            <div
+                              key={asset}
+                              className="overflow-hidden rounded-2xl border border-zinc-800/70 bg-zinc-900/60"
+                            >
+                              <div className="relative">
+                                {video ? (
+                                  <video src={url} controls className="w-full object-cover" />
+                                ) : (
+                                  <img src={url} alt="asset" className="w-full object-cover" />
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleProjectAssetDelete(project.id, asset)}
+                                  disabled={projectAssetDeleteMutation.isPending}
+                                  className="absolute right-2 top-2 rounded-full bg-zinc-950/80 px-3 py-1 text-[10px] uppercase tracking-wide text-zinc-200 transition hover:bg-red-500/80 hover:text-white disabled:opacity-60"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-5">
+                    <p className="text-xs uppercase tracking-wide text-zinc-500">Upload new assets</p>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      onChange={(event) => {
+                        handleProjectAssetUpload(project.id, event.target.files)
+                        event.target.value = ''
+                      }}
+                      className="mt-2 block w-full text-sm text-zinc-300 file:mr-4 file:rounded-xl file:border-0 file:bg-zinc-800 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700"
+                      disabled={projectAssetUploadMutation.isPending}
+                    />
+                    <p className="mt-2 text-[11px] text-zinc-500">Images, GIFs, or videos up to 50MB each.</p>
+                  </div>
                   <div className="mt-6 flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -580,6 +709,7 @@ export default function Admin() {
                           live_url: project.live_url ?? '',
                           cover_image_url: project.cover_image_url ?? '',
                           featured: project.featured,
+                          pendingAssets: [],
                         })
                       }
                       className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition hover:border-zinc-500 hover:text-white"
@@ -787,9 +917,7 @@ export default function Admin() {
                 {contactsData && contactsData.items.length > 0 && (
                   <div className="space-y-4">
                     {contactsData.items.map((item) => {
-                      const attachmentUrl = item.attachment_path
-                        ? `${baseAssetsUrl}/${item.attachment_path.replace(/^\//, '')}`
-                        : null
+                      const attachmentUrl = resolveAssetUrl(item.attachment_path ?? undefined)
                       const createdAt = new Date(item.created_at).toLocaleString(undefined, {
                         dateStyle: 'medium',
                         timeStyle: 'short',

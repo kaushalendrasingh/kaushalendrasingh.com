@@ -65,9 +65,7 @@ export default function Navbar({ profile }: NavbarProps) {
         </div>
         <div className="hidden items-center gap-2 md:flex">
           <LinkItem to="/" label="Home" />
-          <a href="#projects" className="rounded-lg px-3 py-2 text-zinc-300 transition hover:bg-zinc-800/90">
-            Projects
-          </a>
+          <LinkItem to="/projects" label="Projects" />
           <LinkItem to="/contact" label="Contact" />
           <LinkItem to="/admin" label="Admin" />
           <div className="hidden items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900/70 p-1 text-xs font-medium text-zinc-300 lg:flex">
@@ -143,13 +141,12 @@ export default function Navbar({ profile }: NavbarProps) {
                 className="w-full text-left text-sm"
                 onNavigate={() => setMobileMenuOpen(false)}
               />
-              <a
-                href="#projects"
-                className="rounded-lg px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800/90"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Projects
-              </a>
+              <LinkItem
+                to="/projects"
+                label="Projects"
+                className="w-full text-left text-sm"
+                onNavigate={() => setMobileMenuOpen(false)}
+              />
               <LinkItem
                 to="/contact"
                 label="Contact"

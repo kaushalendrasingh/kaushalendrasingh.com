@@ -18,7 +18,9 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="kaushalendrasingh API", version="1.0.0")
 
 ASSET_DIR = Path(__file__).resolve().parent / "assets"
+PROJECT_ASSET_DIR = ASSET_DIR / "projects"
 ASSET_DIR.mkdir(parents=True, exist_ok=True)
+PROJECT_ASSET_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/assets", StaticFiles(directory=ASSET_DIR), name="assets")
 
 app.add_middleware(
@@ -77,6 +79,67 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
     crud.delete_project(db, proj)
     return {"ok": True}
 
+
+@app.post(
+    "/projects/{project_id}/assets",
+    response_model=schemas.ProjectOut,
+    dependencies=[Depends(deps.require_api_key)],
+)
+async def upload_project_assets(
+    project_id: int,
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+):
+    project = crud.get_project(db, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    project_dir = PROJECT_ASSET_DIR / str(project_id)
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    stored_paths: List[str] = []
+    for file in files:
+        if not file.filename:
+            continue
+        suffix = Path(file.filename).suffix[:20]
+        filename = f"{uuid4().hex}{suffix}"
+        file_path = project_dir / filename
+        contents = await file.read()
+        if len(contents) > 50 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File too large (max 50MB)")
+        file_path.write_bytes(contents)
+        stored_paths.append(str(Path("assets") / "projects" / str(project_id) / filename))
+
+    if not stored_paths:
+        raise HTTPException(status_code=400, detail="No files provided")
+
+    return crud.add_project_assets(db, project, stored_paths)
+
+
+@app.delete(
+    "/projects/{project_id}/assets",
+    response_model=schemas.ProjectOut,
+    dependencies=[Depends(deps.require_api_key)],
+)
+def delete_project_asset(
+    project_id: int,
+    asset_path: str = Query(..., description="Relative asset path to remove"),
+    db: Session = Depends(get_db),
+):
+    project = crud.get_project(db, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    normalized = asset_path.lstrip("/")
+    absolute_path = (ASSET_DIR / Path(normalized).relative_to("assets")) if normalized.startswith("assets/") else ASSET_DIR / normalized
+    if absolute_path.is_file():
+        try:
+            absolute_path.unlink()
+        except OSError:
+            pass
+
+    return crud.remove_project_asset(db, project, normalized if normalized.startswith("assets/") else asset_path)
+
 # -------- Tags --------
 @app.get("/tags", response_model=List[str])
 def list_tags(db: Session = Depends(get_db)):
@@ -97,12 +160,14 @@ async def create_inquiry(
     if attachment and attachment.filename:
         safe_suffix = Path(attachment.filename).suffix[:10]
         filename = f"{uuid4().hex}{safe_suffix}"
-        file_path = ASSET_DIR / filename
+        file_dir = ASSET_DIR / "inquiries"
+        file_dir.mkdir(parents=True, exist_ok=True)
+        file_path = file_dir / filename
         contents = await attachment.read()
         if len(contents) > 5 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Attachment too large (max 5MB)")
         file_path.write_bytes(contents)
-        attachment_path = str(Path("assets") / filename)
+        attachment_path = str(Path("assets") / "inquiries" / filename)
 
     payload = schemas.InquiryCreate(
         name=name,

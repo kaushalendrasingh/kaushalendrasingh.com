@@ -30,6 +30,27 @@ def update_project(db: Session, project: models.Project, data: schemas.ProjectUp
     db.refresh(project)
     return project
 
+
+def add_project_assets(db: Session, project: models.Project, paths: list[str]):
+    current = list(project.images or [])
+    current.extend(paths)
+    project.images = current
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+def remove_project_asset(db: Session, project: models.Project, path: str):
+    current = list(project.images or [])
+    if path in current:
+        current.remove(path)
+        project.images = current
+        db.add(project)
+        db.commit()
+        db.refresh(project)
+    return project
+
 def delete_project(db: Session, project: models.Project):
     db.delete(project)
     db.commit()

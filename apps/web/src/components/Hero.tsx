@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import type { Profile } from '../types'
 
 type HeroProps = {
@@ -34,12 +35,12 @@ export default function Hero({ profile }: HeroProps) {
           {profile?.bio ?? 'Full-stack developer focused on delightful experiences, performance, and shipping quickly with confidence.'}
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <a
-            href="#projects"
+          <Link
+            to="/projects"
             className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-zinc-950 shadow-glow transition hover:shadow-glow"
           >
             View Latest Work
-          </a>
+          </Link>
           {primaryCta && (
             <a
               href={primaryCta}

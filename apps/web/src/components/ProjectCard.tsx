@@ -1,5 +1,7 @@
+import { Link } from 'react-router-dom'
 import type { Project } from '../types'
 import { ExternalLinkIcon, GitHubIcon } from './icons'
+import { resolveAssetUrl, isVideoAsset } from '../lib/media'
 
 type Props = {
   project: Project
@@ -8,16 +10,30 @@ type Props = {
 export default function ProjectCard({ project }: Props) {
   const primaryLink = project.live_url || project.github_url
   const linkLabel = project.live_url ? 'Live demo' : project.github_url ? 'Source' : null
+  const heroAsset = project.cover_image_url ?? project.images?.[0]
+  const heroUrl = resolveAssetUrl(heroAsset)
+  const heroVideo = heroAsset ? isVideoAsset(heroAsset) : false
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-800/70 bg-zinc-900/40 shadow-md shadow-black/10 transition hover:border-zinc-600/80 hover:shadow-black/30">
-      {project.cover_image_url && (
+      {heroUrl && (
         <div className="overflow-hidden">
-          <img
-            src={project.cover_image_url}
-            alt={project.title}
-            className="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-          />
+          {heroVideo ? (
+            <video
+              src={heroUrl}
+              className="h-44 w-full object-cover"
+              muted
+              autoPlay
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              src={heroUrl}
+              alt={project.title}
+              className="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+            />
+          )}
         </div>
       )}
       <div className="flex flex-1 flex-col gap-3 p-5">
@@ -63,17 +79,25 @@ export default function ProjectCard({ project }: Props) {
               </span>
             ))}
           </div>
-          {project.github_url && (
-            <a
-              href={project.github_url}
-              target="_blank"
-              rel="noreferrer"
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/projects/${project.id}`}
               className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/70 px-2 py-1 text-[11px] font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-white"
             >
-              <GitHubIcon className="h-3.5 w-3.5" />
-              GitHub
-            </a>
-          )}
+              Details
+            </Link>
+            {project.github_url && (
+              <a
+                href={project.github_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/70 px-2 py-1 text-[11px] font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-white"
+              >
+                <GitHubIcon className="h-3.5 w-3.5" />
+                GitHub
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>
