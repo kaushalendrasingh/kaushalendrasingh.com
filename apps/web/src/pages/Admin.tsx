@@ -39,6 +39,7 @@ type ProfileFormState = {
   linkedin: string
   twitter: string
   website: string
+  instagram: string
 }
 
 const blankProfileForm: ProfileFormState = {
@@ -54,6 +55,7 @@ const blankProfileForm: ProfileFormState = {
   linkedin: '',
   twitter: '',
   website: '',
+  instagram: '',
 }
 
 const CONTACTS_PAGE_SIZE = 10
@@ -158,6 +160,7 @@ export default function Admin() {
       linkedin: profile.linkedin ?? '',
       twitter: profile.twitter ?? '',
       website: profile.website ?? '',
+      instagram: profile.instagram ?? '',
     })
   }, [profile])
 
@@ -270,6 +273,24 @@ export default function Admin() {
     },
   })
 
+  const resumeUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const headers = { 'X-API-Key': apiKey, 'Content-Type': 'multipart/form-data' }
+      const formData = new FormData()
+      formData.append('file', file)
+      const { data } = await api.post('/profile/resume', formData, { headers })
+      return data as Profile
+    },
+    onSuccess: (resp) => {
+      qc.invalidateQueries({ queryKey: ['profile'] })
+      setProfileForm((prev) => ({ ...prev, resume_url: resp.resume_url ?? '' }))
+      alert('Resume updated successfully!')
+    },
+    onError: (error: any) => {
+      alert(error?.response?.data?.detail ?? error.message ?? 'Failed to upload resume')
+    },
+  })
+
   const handleProjectSubmit = () => {
     if (!requireKey(apiKey)) return
     const payload: Record<string, unknown> = {
@@ -336,6 +357,12 @@ export default function Admin() {
     if (!requireKey(apiKey)) return
     if (!window.confirm('Remove this asset from the project?')) return
     projectAssetDeleteMutation.mutate({ projectId, assetPath })
+  }
+
+  const handleResumeUpload = (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    if (!requireKey(apiKey)) return
+    resumeUploadMutation.mutate(files[0])
   }
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
@@ -820,6 +847,36 @@ export default function Admin() {
                 value={profileForm.website}
                 onChange={(event) => setProfileForm({ ...profileForm, website: event.target.value })}
               />
+              <input
+                className="rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-brand/60 focus:outline-none"
+                placeholder="Instagram"
+                value={profileForm.instagram}
+                onChange={(event) => setProfileForm({ ...profileForm, instagram: event.target.value })}
+              />
+            </div>
+            <div className="mt-4 space-y-2">
+              <p className="text-xs uppercase tracking-wide text-zinc-500">Resume</p>
+              {profileForm.resume_url && (
+                <a
+                  href={resolveAssetUrl(profileForm.resume_url) ?? profileForm.resume_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 px-3 py-2 text-xs text-zinc-200 transition hover:border-zinc-500 hover:text-white"
+                >
+                  Current resume
+                </a>
+              )}
+              <input
+                type="file"
+                accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={(event) => {
+                  handleResumeUpload(event.target.files)
+                  event.target.value = ''
+                }}
+                disabled={resumeUploadMutation.isPending}
+                className="block w-full text-sm text-zinc-300 file:mr-4 file:rounded-xl file:border-0 file:bg-zinc-800 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700"
+              />
+              <p className="text-[11px] text-zinc-500">Upload a PDF or DOCX up to 20MB.</p>
             </div>
             <div className="mt-6 flex gap-3">
               <button
@@ -845,6 +902,7 @@ export default function Admin() {
                   linkedin: profile.linkedin ?? '',
                   twitter: profile.twitter ?? '',
                   website: profile.website ?? '',
+                  instagram: profile.instagram ?? '',
                 } : { ...blankProfileForm })}
                 className="rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:border-zinc-500 hover:text-white"
               >

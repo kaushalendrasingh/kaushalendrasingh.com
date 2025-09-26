@@ -37,6 +37,7 @@ class Profile(Base):
     linkedin: Mapped[str | None] = mapped_column(String(500), nullable=True)
     twitter: Mapped[str | None] = mapped_column(String(500), nullable=True)
     website: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    instagram: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
 
 class Inquiry(Base):

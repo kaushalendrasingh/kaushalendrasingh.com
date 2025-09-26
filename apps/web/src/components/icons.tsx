@@ -75,3 +75,11 @@ export const CloseIcon = ({ className = '', ...props }: SVGProps<SVGSVGElement>)
     <path d="M20 4 4 20" />
   </svg>
 )
+
+export const InstagramIcon = ({ className = '', ...props }: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={buildClassName(className)} aria-hidden {...props}>
+    <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Z" />
+    <path d="m17.5 6.5-.01.01" />
+  </svg>
+)

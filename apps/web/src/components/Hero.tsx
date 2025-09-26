@@ -1,16 +1,18 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import type { Profile } from '../types'
+import { resolveAssetUrl } from '../lib/media'
 
 type HeroProps = {
   profile?: Profile
 }
 
 export default function Hero({ profile }: HeroProps) {
-  const primaryCta = profile?.resume_url
+  const primaryCta = resolveAssetUrl(profile?.resume_url ?? undefined)
   const socials = [
     profile?.github && { label: 'GitHub', href: profile.github },
     profile?.linkedin && { label: 'LinkedIn', href: profile.linkedin },
+    profile?.instagram && { label: 'Instagram', href: profile.instagram },
   ].filter(Boolean) as { label: string; href: string }[]
 
   return (

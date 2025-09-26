@@ -2,7 +2,7 @@ import type { JSX } from 'react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import type { Profile } from '../types'
-import { CloseIcon, GitHubIcon, LinkedInIcon, MenuIcon, MoonIcon, SunIcon } from './icons'
+import { CloseIcon, GitHubIcon, InstagramIcon, LinkedInIcon, MenuIcon, MoonIcon, SunIcon } from './icons'
 
 type NavbarProps = {
   profile?: Profile
@@ -48,6 +48,7 @@ export default function Navbar({ profile }: NavbarProps) {
   const social = [
     profile?.github && { href: profile.github, label: 'GitHub', icon: <GitHubIcon /> },
     profile?.linkedin && { href: profile.linkedin, label: 'LinkedIn', icon: <LinkedInIcon /> },
+    profile?.instagram && { href: profile.instagram, label: 'Instagram', icon: <InstagramIcon /> },
   ].filter(Boolean) as { href: string; label: string; icon: JSX.Element }[]
 
   return (

@@ -1,6 +1,7 @@
 import type { JSX } from 'react'
 import type { Profile } from '../types'
-import { ExternalLinkIcon, GitHubIcon, LinkedInIcon, LocationIcon, WorkIcon } from './icons'
+import { ExternalLinkIcon, GitHubIcon, InstagramIcon, LinkedInIcon, LocationIcon, WorkIcon } from './icons'
+import { resolveAssetUrl } from '../lib/media'
 
 type ProfileCardProps = {
   profile?: Profile
@@ -12,9 +13,11 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
   const links = [
     profile.github && { href: profile.github, label: 'GitHub', icon: <GitHubIcon className="h-4 w-4" /> },
     profile.linkedin && { href: profile.linkedin, label: 'LinkedIn', icon: <LinkedInIcon className="h-4 w-4" /> },
+    profile.instagram && { href: profile.instagram, label: 'Instagram', icon: <InstagramIcon className="h-4 w-4" /> },
     profile.website && { href: profile.website, label: 'Website', icon: <ExternalLinkIcon className="h-4 w-4" /> },
     profile.twitter && { href: profile.twitter, label: 'Twitter', icon: <ExternalLinkIcon className="h-4 w-4" /> },
   ].filter(Boolean) as { href: string; label: string; icon: JSX.Element }[]
+  const resumeUrl = resolveAssetUrl(profile.resume_url ?? undefined)
 
   return (
     <aside className="rounded-3xl border border-zinc-800/70 bg-zinc-900/50 p-6 shadow-lg shadow-black/20">
@@ -71,10 +74,21 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
           </div>
         </div>
       )}
-      {links.length > 0 && (
+      {(resumeUrl || links.length > 0) && (
         <div className="mt-6 rounded-2xl border border-zinc-800/70 bg-zinc-900/40 p-4">
           <p className="text-center text-xs uppercase tracking-wide text-zinc-500 sm:text-left">Connect</p>
           <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+            {resumeUrl && (
+              <a
+                href={resumeUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-500 hover:text-white"
+              >
+                <ExternalLinkIcon className="h-4 w-4" />
+                Resume
+              </a>
+            )}
             {links.map((link) => (
               <a
                 key={link.href}

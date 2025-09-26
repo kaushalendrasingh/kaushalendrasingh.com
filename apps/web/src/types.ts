@@ -12,6 +12,7 @@ export type Profile = {
   linkedin?: string | null
   twitter?: string | null
   website?: string | null
+  instagram?: string | null
 }
 
 export type Project = {

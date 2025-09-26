@@ -7,6 +7,7 @@ from pydantic import EmailStr
 from pathlib import Path
 from uuid import uuid4
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 
 from app.config import settings
 from app.database import Base, engine, get_db
@@ -15,12 +16,18 @@ from app import schemas, models, crud, deps
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
 
+with engine.connect() as conn:
+    conn.execute(text("ALTER TABLE IF EXISTS profile ADD COLUMN IF NOT EXISTS instagram VARCHAR(500)"))
+    conn.commit()
+
 app = FastAPI(title="kaushalendrasingh API", version="1.0.0")
 
 ASSET_DIR = Path(__file__).resolve().parent / "assets"
 PROJECT_ASSET_DIR = ASSET_DIR / "projects"
+PROFILE_ASSET_DIR = ASSET_DIR / "profile"
 ASSET_DIR.mkdir(parents=True, exist_ok=True)
 PROJECT_ASSET_DIR.mkdir(parents=True, exist_ok=True)
+PROFILE_ASSET_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/assets", StaticFiles(directory=ASSET_DIR), name="assets")
 
 app.add_middleware(
@@ -43,6 +50,36 @@ def get_profile(db: Session = Depends(get_db)):
 @app.put("/profile", response_model=schemas.ProfileOut, dependencies=[Depends(deps.require_api_key)])
 def update_profile(payload: schemas.ProfileUpdate, db: Session = Depends(get_db)):
     return crud.upsert_profile(db, payload)
+
+
+@app.post("/profile/resume", response_model=schemas.ProfileOut, dependencies=[Depends(deps.require_api_key)])
+async def upload_resume(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Missing file")
+    contents = await file.read()
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Resume too large (max 20MB)")
+
+    suffix = Path(file.filename).suffix[:10]
+    filename = f"resume-{uuid4().hex}{suffix}"
+    dest_path = PROFILE_ASSET_DIR / filename
+    dest_path.write_bytes(contents)
+
+    profile = crud.get_profile(db)
+    old_path = profile.resume_url
+    if old_path and old_path.startswith("assets/"):
+        try:
+            old_file = ASSET_DIR / Path(old_path).relative_to("assets")
+            if old_file.exists():
+                old_file.unlink()
+        except (OSError, ValueError):
+            pass
+
+    profile.resume_url = str(Path("assets") / "profile" / filename)
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    return profile
 
 # -------- Projects --------
 @app.get("/projects", response_model=List[schemas.ProjectOut])

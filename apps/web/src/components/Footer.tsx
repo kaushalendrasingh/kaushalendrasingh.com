@@ -1,6 +1,6 @@
 import type { JSX } from 'react'
 import type { Profile } from '../types'
-import { GitHubIcon, LinkedInIcon } from './icons'
+import { GitHubIcon, InstagramIcon, LinkedInIcon } from './icons'
 
 type FooterProps = {
   profile?: Profile
@@ -10,6 +10,7 @@ export default function Footer({ profile }: FooterProps) {
   const socials = [
     profile?.github && { href: profile.github, label: 'GitHub', icon: <GitHubIcon className="h-4 w-4" /> },
     profile?.linkedin && { href: profile.linkedin, label: 'LinkedIn', icon: <LinkedInIcon className="h-4 w-4" /> },
+    profile?.instagram && { href: profile.instagram, label: 'Instagram', icon: <InstagramIcon className="h-4 w-4" /> },
   ].filter(Boolean) as { href: string; label: string; icon: JSX.Element }[]
 
   return (

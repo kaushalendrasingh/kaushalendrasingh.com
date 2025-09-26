@@ -54,6 +54,7 @@ class ProfileBase(BaseModel):
     linkedin: Optional[str] = None
     twitter: Optional[str] = None
     website: Optional[str] = None
+    instagram: Optional[str] = None
 
 class ProfileUpdate(ProfileBase):
     pass
