@@ -68,7 +68,7 @@ def get_profile(db: Session):
             skills=["React", "TypeScript", "Tailwind", "FastAPI", "PostgreSQL"],
             github="https://github.com/kaushalendrasingh",
             linkedin="https://www.linkedin.com/in/kaushalendra-singh/",
-            instagram="https://www.instagram.com/kaushalendrasingh/",
+            instagram="https://www.instagram.com/kaushcodes/",
             website="https://kaushcodes.com"
         )
         db.add(p)
