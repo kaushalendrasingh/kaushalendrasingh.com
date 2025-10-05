@@ -9,6 +9,11 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins_list(self) -> List[str]:
-        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+        """Parse comma-separated origins and return as list"""
+        origins = [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+        # Add wildcard if explicitly set to "*"
+        if self.ALLOWED_ORIGINS == "*":
+            return ["*"]
+        return origins
 
 settings = Settings()  # reads from env

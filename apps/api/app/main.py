@@ -30,12 +30,16 @@ PROJECT_ASSET_DIR.mkdir(parents=True, exist_ok=True)
 PROFILE_ASSET_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/assets", StaticFiles(directory=ASSET_DIR), name="assets")
 
+# CORS Configuration
+# This allows requests from specified origins with credentials
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins_list,
+    allow_origins=settings.allowed_origins_list,  # List of allowed origins from env
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # Allowed HTTP methods
+    allow_headers=["*"],  # Allow all headers including X-API-Key
+    expose_headers=["*"],  # Expose all response headers
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 @app.get("/health")
