@@ -16,10 +16,10 @@
 ### 3. Configured Multiple Origins
 ```
 http://localhost:5173              ← Local development
-http://13.200.148.246              ← EC2 IP
-http://13.200.148.246:8000         ← API endpoint
-https://kaushalendrasingh.com      ← Production domain
-https://www.kaushalendrasingh.com  ← WWW subdomain
+http://YOUR_EC2_IP                 ← EC2 IP
+http://YOUR_EC2_IP:8000            ← API endpoint
+https://your-domain.com            ← Production domain
+https://www.your-domain.com        ← WWW subdomain
 ```
 
 ## 🚀 Quick Deploy to EC2:
@@ -31,17 +31,17 @@ git commit -m "Fix CORS configuration"
 git push origin main
 
 # 2. SSH to EC2
-ssh -i "your-key.pem" ubuntu@13.200.148.246
+ssh -i "your-key.pem" ubuntu@YOUR_EC2_IP
 
 # 3. Pull and setup
-cd ~/kaushalendrasingh.com
+cd ~/your-project-directory
 git pull
 
 # 4. Create .env file (IMPORTANT!)
 cat > apps/api/.env << 'EOF'
-DATABASE_URL=postgresql+psycopg://kaustya:supersecret@db:5432/kaustya_portfolio
-ADMIN_API_KEY=change-me-to-strong-password
-ALLOWED_ORIGINS=http://13.200.148.246,http://13.200.148.246:8000,https://kaushalendrasingh.com
+DATABASE_URL=postgresql+psycopg://username:password@db:5432/database_name
+ADMIN_API_KEY=your-super-secret-api-key
+ALLOWED_ORIGINS=http://YOUR_EC2_IP,http://YOUR_EC2_IP:8000,https://your-domain.com
 EOF
 
 # 5. Restart API
@@ -55,12 +55,12 @@ docker-compose logs api -f
 
 ```bash
 # From EC2 or local terminal
-curl -I -X OPTIONS http://13.200.148.246:8000/profile \
-  -H "Origin: http://13.200.148.246" \
+curl -I -X OPTIONS http://YOUR_EC2_IP:8000/profile \
+  -H "Origin: http://YOUR_EC2_IP" \
   -H "Access-Control-Request-Method: GET"
 
 # Expected response headers:
-# access-control-allow-origin: http://13.200.148.246
+# access-control-allow-origin: http://YOUR_EC2_IP
 # access-control-allow-credentials: true
 # access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
 ```

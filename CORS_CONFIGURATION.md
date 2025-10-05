@@ -19,10 +19,10 @@
    ```
    http://localhost:5173         # Local Vite dev server
    http://localhost:3000         # Alternative local port
-   http://13.200.148.246         # Your EC2 public IP
-   http://13.200.148.246:8000    # Your API endpoint
-   https://kaushalendrasingh.com # Your production domain
-   https://www.kaushalendrasingh.com  # WWW subdomain
+   http://YOUR_EC2_IP            # Your EC2 public IP
+   http://YOUR_EC2_IP:8000       # Your API endpoint
+   https://your-domain.com       # Your production domain
+   https://www.your-domain.com   # WWW subdomain
    ```
 
 ### How CORS Works Now:
@@ -41,14 +41,14 @@
 
 #### Backend (`apps/api/.env`):
 ```bash
-DATABASE_URL=postgresql+psycopg://kaustya:supersecret@db:5432/kaustya_portfolio
-ADMIN_API_KEY=change-me-to-something-secure
-ALLOWED_ORIGINS=http://localhost:5173,http://13.200.148.246,https://kaushalendrasingh.com
+DATABASE_URL=postgresql+psycopg://username:password@db:5432/database_name
+ADMIN_API_KEY=your-secure-api-key-here
+ALLOWED_ORIGINS=http://localhost:5173,http://your-server-ip,https://your-domain.com
 ```
 
 #### Frontend (`apps/web/.env`):
 ```bash
-VITE_API_URL=http://13.200.148.246:8000
+VITE_API_URL=http://your-server-ip:8000
 ```
 
 ### Testing CORS:

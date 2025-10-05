@@ -28,7 +28,7 @@ git push origin main
 ### Step 2: SSH into Your EC2 Instance
 
 ```bash
-ssh -i "your-key.pem" ubuntu@13.200.148.246
+ssh -i "your-key.pem" ubuntu@YOUR_EC2_IP
 ```
 
 ### Step 3: Pull Latest Code
@@ -44,15 +44,15 @@ git pull origin main
 ```bash
 cat > apps/api/.env << 'EOF'
 # API env
-DATABASE_URL=postgresql+psycopg://kaustya:supersecret@db:5432/kaustya_portfolio
+DATABASE_URL=postgresql+psycopg://username:password@db:5432/database_name
 ADMIN_API_KEY=your-super-secret-api-key-here
 
 # CORS Configuration - Add all origins that need to access your API
-ALLOWED_ORIGINS=http://13.200.148.246,http://13.200.148.246:8000,https://kaushalendrasingh.com,https://www.kaushalendrasingh.com
+ALLOWED_ORIGINS=http://YOUR_EC2_IP,http://YOUR_EC2_IP:8000,https://your-domain.com
 
-# Admin credentials
-VITE_ADMIN_EMAIL=kaushcodes@gmail.com
-VITE_ADMIN_PASSWORD=K@ush1234
+# Admin credentials (change these!)
+VITE_ADMIN_EMAIL=your-email@example.com
+VITE_ADMIN_PASSWORD=your-secure-password
 EOF
 ```
 
@@ -60,19 +60,19 @@ EOF
 ```bash
 cat > apps/web/.env << 'EOF'
 # Frontend environment variables
-VITE_API_URL=http://13.200.148.246:8000
+VITE_API_URL=http://YOUR_EC2_IP:8000
 EOF
 ```
 
 #### Create root `.env`:
 ```bash
 cat > .env << 'EOF'
-DATABASE_URL=postgresql+psycopg://kaustya:supersecret@db:5432/kaustya_portfolio
+DATABASE_URL=postgresql+psycopg://username:password@db:5432/database_name
 ADMIN_API_KEY=your-super-secret-api-key-here
-ALLOWED_ORIGINS=http://13.200.148.246,http://13.200.148.246:8000,https://kaushalendrasingh.com,https://www.kaushalendrasingh.com
-POSTGRES_USER=kaustya
-POSTGRES_PASSWORD=supersecret
-POSTGRES_DB=kaustya_portfolio
+ALLOWED_ORIGINS=http://YOUR_EC2_IP,http://YOUR_EC2_IP:8000,https://your-domain.com
+POSTGRES_USER=your_db_user
+POSTGRES_PASSWORD=your_db_password
+POSTGRES_DB=your_database_name
 EOF
 ```
 
@@ -114,11 +114,11 @@ npm run build
 ```bash
 # Test from your EC2 instance
 curl -I -X OPTIONS http://localhost:8000/profile \
-  -H "Origin: http://13.200.148.246" \
+  -H "Origin: http://YOUR_EC2_IP" \
   -H "Access-Control-Request-Method: GET"
 
 # Should see:
-# access-control-allow-origin: http://13.200.148.246
+# access-control-allow-origin: http://YOUR_EC2_IP
 # access-control-allow-credentials: true
 # access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
 ```
